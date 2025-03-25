@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+	<link href="./css/select2.min.css" rel="stylesheet">
+	<script src="./js/jquery.js"></script>
+	<script src="./js/select2.full.min.js"></script>
+	
+	<style>
+		.theme.form .select2-container {
+			max-width: 280px;
+			max-height: 40px;
+			height: 40px;
+		}
+
+		@media screen and (max-width:768px) {
+			.theme.form .select2-container {
+				max-width: 100%;
+			}
+		}
+
+		.theme.form .mw-100 .select2-container {
+			max-width: 100%;
+		}
+
+		.theme.form .form-group select.select2.form-control[multiple] {
+			max-height: 40px;
+		}
+
+		.theme.form .select2-container .select2-selection--single {
+			height: 40px;
+		}
+
+		.theme.form .select2-container--default .select2-selection--single .select2-selection__clear {
+			height: 36px;
+		}
+
+		.theme.form .select2-container--default .select2-selection--single .select2-selection__rendered {
+			line-height: 40px;
+		}
+
+		.theme.form .select2-container .select2-selection--multiple {
+			max-height: 46px;
+			overflow-y: auto;
+			overflow-x: hidden;
+		}
+
+		.multipleCheckbox span.select2-search.select2-search--inline {
+			max-width: 250px;
+		}
+
+		.multipleCheckbox .select2-results__option:before {
+			content: "";
+			display: inline-block;
+			position: relative;
+			height: 22px;
+			width: 22px;
+			border: 0;
+			border-radius: 5px;
+			background-color: #3938774a;
+			margin-right: 10px;
+			vertical-align: middle;
+		}
+
+		.multipleCheckbox .select2-results__option.select2-results__option--highlighted:before {
+			background-color: #fff;
+		}
+
+		.multipleCheckbox .select2-results__option--selectable {
+			cursor: pointer;
+			color: #202020;
+			font-family: Inter;
+			font-size: 14px;
+			font-style: normal;
+			font-weight: 300;
+		}
+
+		.multipleCheckbox .select2-results__option--selected:before {
+			font-family: fontAwesome;
+			content: "\f00c";
+			color: #fff;
+			background: linear-gradient(180deg, #4F6EBD 0%, #4F6EBD 100%);
+			border: 0;
+			display: inline-block;
+			padding: 0px 4px;
+			height: auto;
+			width: auto;
+			border-radius: 5px;
+		}
+
+		.theme.form .multi .select2-container {
+			width: 100%;
+			max-width: 500px;
+			max-height: 120px;
+			height: 100%;
+		}
+
+		.theme.form .multi .select2-container .select2-selection--multiple {
+			max-height: 100%;
+			height: 100%;
+		}
+	</style>
+    <form class="form theme">
+        <select name="testing" class="form-control select2" id="testing">
+            <option value="test 1">test 1</option>
+            <option value="test 2">test 2</option>
+            <option value="test 3">test 3</option>
+            <option value="test 4">test 4</option>
+            <option value="test 5">test 5</option>
+            <option value="test 6">test 6</option>
+        </select>
+    </form>
+<script>
+		function createSelect2(id, placeholder, route, customPlaceHolder) {
+			var parent = $(document.body);
+			if ($(id).parents('.modal').length !== 0)
+				parent = $('#' + $(id).parents('.modal').attr('id'))
+			if (placeholder == '' || !placeholder) {
+				placeholder = $(id).closest('.form-group').find('label').text()
+			} else if (customPlaceHolder) {
+				placeholder = customPlaceHolder
+			}
+			if (route) {
+				var list = [];
+				$.ajax({
+					url: route,
+					type: 'GET',
+					success: (response) => {
+						$(id).html(null);
+						var option = new Option('', '', false, false)
+						$(id).append(option);
+						$.map(response.response, function(item) {
+							var option = new Option(item.text, item.value, false, false)
+							for (let key of Object.keys(item)) {
+								if (key == 'value') {
+									$(option).attr('value', item[key]);
+								} else if (key == 'text') {
+									$(option).text(item[key]);
+								} else {
+									$(option).attr(`data-${key}`, item[key]);
+								}
+							}
+							$(id).append(option);
+						})
+						$(id).select2({
+							width: "100%",
+							placeholder: placeholder,
+							dropdownParent: parent,
+							closeOnSelect: !$(id).prop('multiple'),
+							allowClear: false,
+							templateResult: select2CheckboxAdder,
+							// minimumInputLength: 1,
+						}).on("change", function() {
+
+						});
+						if ($(id).attr('data-setValue')) {
+							$(id).val($(id).attr('data-setValue')).trigger('change');
+						}
+					},
+					error() {
+						$(id).select2({
+							width: "100%",
+							placeholder: placeholder,
+							dropdownParent: parent,
+							closeOnSelect: true,
+							// minimumInputLength: 1,
+							allowClear: true,
+						}).on("change", function() {});
+					}
+				})
+
+			} else {
+				var $element = $(id).select2({
+					width: "100%",
+					placeholder: placeholder,
+					dropdownParent: parent,
+					closeOnSelect: false,
+					templateResult: select2CheckboxAdder,
+					allowClear: false
+				});
+				if ($(id).attr('data-setValue')) {
+					$(id).val($(id).attr('data-setValue')).trigger('change');
+				}
+			}
+		}
+
+		function select2CheckboxAdder(element) {
+			if ($('.select2-container--open .select2-results__options[aria-multiselectable="true"]').length == 1) {
+				$('.select2-container--open').addClass('multipleCheckbox')
+			}
+			return element.text;
+		}
+
+		function addSelect2FromClass() {
+			if ($('.form-control').hasClass('select2')) {
+				$.each($('.theme.form').find('.form-control.select2'), (i, ele) => {
+					var $sid = $(ele).attr('id');
+					var $sroute = $(ele).attr('route');
+					var $placeholder = $(ele).attr('placeholder');
+					createSelect2($('#' + $sid), $placeholder, $sroute)
+				})
+			}
+		}
+		addSelect2FromClass()
+	</script>
+
+</body>
+</html>
